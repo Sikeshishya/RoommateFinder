@@ -34,4 +34,9 @@ public class UserController {
     public User updateUser(@PathVariable String username, @RequestBody User updatedUser) {
         return userService.updateUser(username, updatedUser);
     }
+
+    @GetMapping("/{username}")
+    public User getUserProfile(@PathVariable String username) {
+        return userService.getUserByUsername(username);
+    }
 }

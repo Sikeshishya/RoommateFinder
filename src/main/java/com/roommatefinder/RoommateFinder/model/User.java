@@ -11,6 +11,11 @@ public class User {
     private String username;
     private String email;
     private String password;
+    private String role = "USER";  // Default role
+    private String phoneNumber;
+    private String preferredLocation;
+    private double budget;
+    private String preferredGender;
 
     // Getters and Setters
     public String getId() {
@@ -43,5 +48,45 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public String getPreferredLocation() {
+        return preferredLocation;
+    }
+
+    public void setPreferredLocation(String preferredLocation) {
+        this.preferredLocation = preferredLocation;
+    }
+
+    public double getBudget() {
+        return budget;
+    }
+
+    public void setBudget(double budget) {
+        this.budget = budget;
+    }
+
+    public String getPreferredGender() {
+        return preferredGender;
+    }
+
+    public void setPreferredGender(String preferredGender) {
+        this.preferredGender = preferredGender;
     }
 }
