@@ -13,18 +13,20 @@ public class Property {
     private String location;
     private double budget;
     private String preferredGender;
+    private String userId;  // 🆕 Added userId field
 
     public Property() {}
 
-    public Property(String title, String description, String location, double budget, String preferredGender) {
+    public Property(String title, String description, String location, double budget, String preferredGender, String userId) {
         this.title = title;
         this.description = description;
         this.location = location;
         this.budget = budget;
         this.preferredGender = preferredGender;
+        this.userId = userId; // 🆕 Initialize userId
     }
 
-    // Getters and setters
+    // Getters and Setters
     public String getId() {
         return id;
     }
@@ -71,5 +73,13 @@ public class Property {
 
     public void setPreferredGender(String preferredGender) {
         this.preferredGender = preferredGender;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 }

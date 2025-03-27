@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/auth")
@@ -56,21 +57,22 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
-        // Check if username already exists
-        if (userRepository.findByUsername(user.getUsername()) != null) {
+        System.out.println("Checking username: " + user.getUsername());
+
+        Optional<User> existingUser = userRepository.findByUsername(user.getUsername());
+        System.out.println("User exists? " + existingUser.isPresent());
+
+        if (existingUser.isPresent()) {
             return ResponseEntity.badRequest().body("Username already exists");
         }
 
-
-        // Encode password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
 
-        // Generate token for new user
         String token = jwtUtil.generateToken(user.getUsername());
-
         Map<String, String> response = new HashMap<>();
         response.put("token", token);
         return ResponseEntity.ok(response);
     }
+
 }

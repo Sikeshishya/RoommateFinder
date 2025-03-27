@@ -4,7 +4,6 @@ import com.roommatefinder.RoommateFinder.model.Property;
 import com.roommatefinder.RoommateFinder.repository.PropertyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 
 @Service
@@ -29,8 +28,9 @@ public class PropertyServiceImpl implements PropertyService {
     }
 
     @Override
-    public void deletePropertyById(String id) {
+    public boolean deletePropertyById(String id) {
         propertyRepository.deleteById(id);
+        return false;
     }
 
     @Override
@@ -46,7 +46,11 @@ public class PropertyServiceImpl implements PropertyService {
 
             return propertyRepository.save(existingProperty);
         }
-
         return null;
+    }
+
+    @Override
+    public List<Property> getPropertiesByUserId(String userId) {
+        return propertyRepository.findByUserId(userId);  // 🆕 Fetch properties for a user
     }
 }

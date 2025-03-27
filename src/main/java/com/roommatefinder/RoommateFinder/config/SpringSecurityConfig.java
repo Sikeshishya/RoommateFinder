@@ -42,18 +42,20 @@ public class SpringSecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())  // Disable CSRF protection (use with caution)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))  // Set session to stateless
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/public/**").permitAll()  // Allow public endpoints
-                        .requestMatchers("/user/**", "/property/**").authenticated()  // Secure these endpoints
+                        .requestMatchers("/auth/**", "/public/**").permitAll()
+                        .requestMatchers("/api/users/all", "/api/users/delete/**").hasRole("ADMIN")  // 🔒 Only admins
+                        .requestMatchers("/user/**", "/property/**").authenticated()
                         .anyRequest().permitAll()
                 )
-                .authenticationProvider(authenticationProvider())  // Set authentication provider
-                .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class);  // Add JWT filter
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {

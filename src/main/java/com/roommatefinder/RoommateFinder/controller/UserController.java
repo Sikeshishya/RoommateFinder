@@ -2,41 +2,50 @@ package com.roommatefinder.RoommateFinder.controller;
 
 import com.roommatefinder.RoommateFinder.model.User;
 import com.roommatefinder.RoommateFinder.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    @PostMapping("/create")
-    public User createUser(@RequestBody User user) {
-        return userService.saveUser(user);
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<User> registerUser(@RequestBody User user) {
+        User savedUser = userService.registerUser(user);  // Updated method name
+        return ResponseEntity.ok(savedUser);
     }
 
     @GetMapping("/all")
-    public List<User> getAllUsers() {
-        return userService.getAllUsers();
+    public ResponseEntity<List<User>> getAllUsers() {
+        List<User> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
     }
 
-    @DeleteMapping("/delete/{username}")
-    public String deleteUserByUsername(@PathVariable String username) {
+    @DeleteMapping("/{username}")
+    public ResponseEntity<String> deleteUser(@PathVariable String username) {
         userService.deleteUserByUsername(username);
-        return "User with username '" + username + "' has been deleted successfully!";
+        return ResponseEntity.ok("User deleted successfully!");
     }
 
-    @PutMapping("/update/{username}")
-    public User updateUser(@PathVariable String username, @RequestBody User updatedUser) {
-        return userService.updateUser(username, updatedUser);
+    @PutMapping("/{username}")
+    public ResponseEntity<User> updateUser(@PathVariable String username, @RequestBody User updatedUser) {
+        User user = userService.updateUserDetails(username, updatedUser);  // Updated method name
+        return ResponseEntity.ok(user);
     }
 
     @GetMapping("/{username}")
-    public User getUserProfile(@PathVariable String username) {
-        return userService.getUserByUsername(username);
+    public ResponseEntity<User> getUserByUsername(@PathVariable String username) {
+        Optional<User> user = userService.findUserByUsername(username);  // Updated method name
+        return user.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }
