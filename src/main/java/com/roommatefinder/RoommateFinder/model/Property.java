@@ -1,5 +1,8 @@
 package com.roommatefinder.RoommateFinder.model;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -8,22 +11,34 @@ public class Property {
 
     @Id
     private String id;
+
+    @NotBlank(message = "Title is required")
     private String title;
+
+    @NotBlank(message = "Description is required")
     private String description;
+
+    @NotBlank(message = "Location is required")
     private String location;
+
+    @Positive(message = "Budget must be positive")
     private double budget;
+
+    @Pattern(regexp = "^(male|female|any)$", message = "Preferred gender must be male, female or any")
     private String preferredGender;
-    private String userId;  // 🆕 Added userId field
+
+    private String userId;
 
     public Property() {}
 
-    public Property(String title, String description, String location, double budget, String preferredGender, String userId) {
+    public Property(String title, String description, String location,
+                    double budget, String preferredGender, String userId) {
         this.title = title;
         this.description = description;
         this.location = location;
         this.budget = budget;
         this.preferredGender = preferredGender;
-        this.userId = userId; // 🆕 Initialize userId
+        this.userId = userId;
     }
 
     // Getters and Setters

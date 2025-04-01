@@ -20,12 +20,13 @@ public class PropertyController {
     @Autowired
     private JwtUtil jwtUtil;
 
+    // Existing endpoints
     @PostMapping("/create")
-    public ResponseEntity<Property> createProperty(@RequestBody Property property, @RequestHeader("Authorization") String token) {
+    public ResponseEntity<Property> createProperty(@RequestBody Property property,
+                                                   @RequestHeader("Authorization") String token) {
         try {
             String jwtToken = token.substring(7); // Remove "Bearer "
-            String userId = jwtUtil.extractUsername(jwtToken); // Extract user ID from token
-
+            String userId = jwtUtil.extractUsername(jwtToken);
             property.setUserId(userId);
             Property savedProperty = propertyService.saveProperty(property);
             return ResponseEntity.ok(savedProperty);
@@ -51,7 +52,6 @@ public class PropertyController {
         try {
             String jwtToken = token.substring(7);
             String userId = jwtUtil.extractUsername(jwtToken);
-
             List<Property> properties = propertyService.getPropertiesByUserId(userId);
             return ResponseEntity.ok(properties);
         } catch (Exception e) {
@@ -61,17 +61,66 @@ public class PropertyController {
 
     @PutMapping("/update/{id}")
     public ResponseEntity<Property> updateProperty(@PathVariable String id, @RequestBody Property updatedProperty) {
-        Optional<Property> updated = Optional.ofNullable(propertyService.updateProperty(id, updatedProperty));
-        return updated.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        Property updated = propertyService.updateProperty(id, updatedProperty);
+        return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> deletePropertyById(@PathVariable String id) {
         boolean deleted = propertyService.deletePropertyById(id);
-        if (deleted) {
-            return ResponseEntity.ok("Property with ID '" + id + "' has been deleted successfully!");
+        return deleted ? ResponseEntity.ok("Property deleted successfully") : ResponseEntity.notFound().build();
+    }
+
+    // New filtering endpoints
+    @GetMapping("/filter/budget")
+    public ResponseEntity<List<Property>> filterByBudgetRange(
+            @RequestParam double min,
+            @RequestParam double max) {
+        List<Property> properties = propertyService.filterPropertiesByBudget(min, max);
+        return ResponseEntity.ok(properties);
+    }
+
+    @GetMapping("/filter/preferences")
+    public ResponseEntity<List<Property>> filterByPreferences(
+            @RequestParam String gender) {
+        List<Property> properties = propertyService.filterPropertiesByPreferences(gender);
+        return ResponseEntity.ok(properties);
+    }
+
+    @GetMapping("/filter/location")
+    public ResponseEntity<List<Property>> filterByLocation(
+            @RequestParam String location) {
+        List<Property> properties = propertyService.filterPropertiesByLocation(location);
+        return ResponseEntity.ok(properties);
+    }
+
+    @GetMapping("/filter/advanced")
+    public ResponseEntity<List<Property>> advancedFilter(
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) Double minBudget,
+            @RequestParam(required = false) Double maxBudget,
+            @RequestParam(required = false) String preferredGender) {
+
+        List<Property> properties;
+
+        if (location != null && minBudget != null && maxBudget != null && preferredGender != null) {
+            properties = propertyService.filterPropertiesByAllCriteria(location, minBudget, maxBudget, preferredGender);
+        } else if (location != null && minBudget != null && maxBudget != null) {
+            properties = propertyService.filterPropertiesByLocationAndBudget(location, minBudget, maxBudget);
+        } else if (minBudget != null && maxBudget != null && preferredGender != null) {
+            properties = propertyService.filterPropertiesByBudgetAndPreferences(minBudget, maxBudget, preferredGender);
+        } else if (location != null && preferredGender != null) {
+            properties = propertyService.filterPropertiesByLocationAndPreferences(location, preferredGender);
+        } else if (minBudget != null && maxBudget != null) {
+            properties = propertyService.filterPropertiesByBudget(minBudget, maxBudget);
+        } else if (location != null) {
+            properties = propertyService.filterPropertiesByLocation(location);
+        } else if (preferredGender != null) {
+            properties = propertyService.filterPropertiesByPreferences(preferredGender);
         } else {
-            return ResponseEntity.notFound().build();
+            properties = propertyService.getAllProperties();
         }
+
+        return ResponseEntity.ok(properties);
     }
 }
