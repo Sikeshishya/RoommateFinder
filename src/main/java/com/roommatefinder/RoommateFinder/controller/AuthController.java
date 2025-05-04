@@ -4,16 +4,14 @@ import com.roommatefinder.RoommateFinder.model.User;
 import com.roommatefinder.RoommateFinder.repository.UserRepository;
 import com.roommatefinder.RoommateFinder.utils.JwtUtil;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -57,22 +55,36 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
-        System.out.println("Checking username: " + user.getUsername());
-
-        Optional<User> existingUser = userRepository.findByUsername(user.getUsername());
-        System.out.println("User exists? " + existingUser.isPresent());
-
-        if (existingUser.isPresent()) {
-            return ResponseEntity.badRequest().body("Username already exists");
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of(
+                            "success", false,
+                            "message", "Username already exists"
+                    ));
         }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
 
-        String token = jwtUtil.generateToken(user.getUsername());
-        Map<String, String> response = new HashMap<>();
-        response.put("token", token);
-        return ResponseEntity.ok(response);
+        String token = jwtUtil.generateToken(savedUser.getUsername());
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "token", token,
+                "user", Map.of(
+                        "id", savedUser.getId(),
+                        "username", savedUser.getUsername(),
+                        "email", savedUser.getEmail(),
+                        "role", savedUser.getRole()
+                )
+        ));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<User> getCurrentUser(Authentication authentication) {
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
 }

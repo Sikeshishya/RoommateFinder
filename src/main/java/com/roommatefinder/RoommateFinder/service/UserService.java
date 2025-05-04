@@ -10,4 +10,6 @@ public interface UserService {
     void deleteUserByUsername(String username);
     Optional<User> findUserByUsername(String username);  // Returns Optional<User>
     User updateUserDetails(String username, User updatedUser);
+
+    User updateUser(String username, User userDetails);
 }

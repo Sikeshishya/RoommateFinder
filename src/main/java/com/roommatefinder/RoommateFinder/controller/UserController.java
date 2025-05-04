@@ -1,7 +1,10 @@
 package com.roommatefinder.RoommateFinder.controller;
 
 import com.roommatefinder.RoommateFinder.model.User;
+import com.roommatefinder.RoommateFinder.repository.UserRepository;
 import com.roommatefinder.RoommateFinder.service.UserService;
+import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,8 +17,12 @@ public class UserController {
 
     private final UserService userService;
 
-    public UserController(UserService userService) {
+    private final UserRepository userRepository;
+
+
+    public UserController(UserService userService, UserRepository userRepository) {
         this.userService = userService;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/register")
@@ -30,22 +37,30 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
+
     @DeleteMapping("/{username}")
     public ResponseEntity<String> deleteUser(@PathVariable String username) {
         userService.deleteUserByUsername(username);
         return ResponseEntity.ok("User deleted successfully!");
     }
 
-    @PutMapping("/{username}")
-    public ResponseEntity<User> updateUser(@PathVariable String username, @RequestBody User updatedUser) {
-        User user = userService.updateUserDetails(username, updatedUser);  // Updated method name
-        return ResponseEntity.ok(user);
+    @PutMapping("/update/{username}")
+    public ResponseEntity<User> updateUser(@PathVariable String username,
+                                           @RequestBody User userDetails,
+                                           Authentication authentication) {
+        // Add authorization check
+        if (!authentication.name().equals(username)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        User updatedUser = userService.updateUser(username, userDetails);
+        return ResponseEntity.ok(updatedUser);
     }
 
     @GetMapping("/{username}")
     public ResponseEntity<User> getUserByUsername(@PathVariable String username) {
-        Optional<User> user = userService.findUserByUsername(username);  // Updated method name
-        return user.map(ResponseEntity::ok)
+        return userRepository.findByUsername(username)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 }

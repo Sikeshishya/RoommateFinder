@@ -47,14 +47,29 @@ public class SpringSecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Updated CORS config
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/public/**").permitAll()
-                        .requestMatchers("/api/users/all", "/api/users/delete/**").hasRole("ADMIN")
-                        .requestMatchers("/user/**", "/property/**").authenticated()
-                        .anyRequest().permitAll()
+                        .requestMatchers(
+                                "/auth/**",
+                                "/error",
+                                "/static/**",
+                                "/favicon.ico"
+                        ).permitAll()
+                        .requestMatchers(
+                                "/api/users/all",
+                                "/api/users/delete/**",
+                                "/api/properties/delete/**"
+                        ).hasRole("ADMIN")
+                        .requestMatchers(
+                                "/api/properties/create",
+                                "/api/properties/user",
+                                "/api/properties/update/**",
+                                "/api/users/update/**"
+                        ).authenticated()
+                        .requestMatchers("/api/**").authenticated() // Secure all other API endpoints
+                        .anyRequest().permitAll() // Allow static resources for frontend
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class);
@@ -65,10 +80,26 @@ public class SpringSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:3000",// Frontend dev server
+                "http://localhost:8081",
+                "http://127.0.0.1:3000",    // Alternative localhost
+                "https://your-production-domain.com" // Production domain
+        ));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type",
+                "X-Requested-With",
+                "Accept",
+                "Origin"
+        ));
+        configuration.setExposedHeaders(List.of(
+                "Authorization",
+                "Content-Disposition"
+        ));
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

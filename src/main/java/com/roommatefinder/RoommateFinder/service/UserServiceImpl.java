@@ -70,4 +70,9 @@ public class UserServiceImpl implements UserService {
             return userRepository.save(user);
         }).orElseThrow(() -> new RuntimeException("User not found!"));
     }
+
+    @Override
+    public User updateUser(String username, User userDetails) {
+        return null;
+    }
 }

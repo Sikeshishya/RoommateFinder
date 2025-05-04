@@ -1,6 +1,7 @@
 package com.roommatefinder.RoommateFinder.controller;
 
 import com.roommatefinder.RoommateFinder.model.Property;
+import com.roommatefinder.RoommateFinder.repository.PropertyRepository;
 import com.roommatefinder.RoommateFinder.service.PropertyService;
 import com.roommatefinder.RoommateFinder.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +19,15 @@ public class PropertyController {
     private PropertyService propertyService;
 
     @Autowired
+    private final PropertyRepository propertyRepository;
+
+
+    @Autowired
     private JwtUtil jwtUtil;
+
+    public PropertyController(PropertyRepository propertyRepository) {
+        this.propertyRepository = propertyRepository;
+    }
 
     // Existing endpoints
     @PostMapping("/create")
@@ -123,4 +132,5 @@ public class PropertyController {
 
         return ResponseEntity.ok(properties);
     }
+
 }
