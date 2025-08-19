@@ -2,7 +2,6 @@ package com.roommatefinder.RoommateFinder.service;
 
 import com.roommatefinder.RoommateFinder.model.User;
 import com.roommatefinder.RoommateFinder.repository.UserRepository;
-import com.roommatefinder.RoommateFinder.service.UserService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -22,19 +21,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User registerUser(User user) {
-        // Check if the username is already taken
-        Optional<User> existingUser = userRepository.findByUsername(user.getUsername());
-        if (existingUser.isPresent()) {
+        userRepository.findByUsername(user.getUsername()).ifPresent(s -> {
             throw new RuntimeException("Username is already taken!");
-        }
-        // Encrypt password before saving
+        });
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-
-        // Assign default role if not set
         if (user.getRole() == null || user.getRole().isEmpty()) {
             user.setRole("USER");
         }
-
         return userRepository.save(user);
     }
 
@@ -54,25 +47,18 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User updateUserDetails(String username, User updatedUser) {
-        return userRepository.findByUsername(username).map(user -> {
-            user.setEmail(updatedUser.getEmail());
-            user.setPhoneNumber(updatedUser.getPhoneNumber());
-            user.setPreferredLocation(updatedUser.getPreferredLocation());
-            user.setBudget(updatedUser.getBudget());
-            user.setPreferredGender(updatedUser.getPreferredGender());
-
-            // Update password only if provided
-            if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
-                user.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
-            }
-
-            return userRepository.save(user);
-        }).orElseThrow(() -> new RuntimeException("User not found!"));
-    }
-
-    @Override
     public User updateUser(String username, User userDetails) {
-        return null;
+        return userRepository.findByUsername(username).map(user -> {
+            user.setEmail(userDetails.getEmail());
+            user.setPhoneNumber(userDetails.getPhoneNumber());
+            user.setPreferredLocation(userDetails.getPreferredLocation());
+            user.setBudget(userDetails.getBudget());
+            user.setPreferredGender(userDetails.getPreferredGender());
+
+            if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
+                user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+            }
+            return userRepository.save(user);
+        }).orElseThrow(() -> new RuntimeException("User not found with username: " + username));
     }
 }

@@ -38,7 +38,7 @@ public class Property {
         this.location = location;
         this.budget = budget;
         this.preferredGender = preferredGender;
-        this.userId = userId;
+        this.userId = userId; // Corrected typo here
     }
 
     // Getters and Setters

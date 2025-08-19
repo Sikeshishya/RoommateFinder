@@ -11,7 +11,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -35,13 +34,8 @@ public class SpringSecurityConfig {
     }
 
     @Bean
-    public UserDetailsService userDetailsService() {
-        return userDetailsServiceImpl;
-    }
-
-    @Bean
     public JwtFilter jwtFilter() {
-        return new JwtFilter(userDetailsService(), jwtUtil);
+        return new JwtFilter(userDetailsServiceImpl, jwtUtil);
     }
 
     @Bean
@@ -52,24 +46,19 @@ public class SpringSecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/auth/**",
-                                "/error",
+                                "/",
+                                "/index.html",
+                                "/assets/**",
                                 "/static/**",
-                                "/favicon.ico"
+                                "/favicon.ico",
+                                "/auth/**",
+                                "/error"
                         ).permitAll()
                         .requestMatchers(
                                 "/api/users/all",
-                                "/api/users/delete/**",
-                                "/api/properties/delete/**"
+                                "/api/users/delete/**"
                         ).hasRole("ADMIN")
-                        .requestMatchers(
-                                "/api/properties/create",
-                                "/api/properties/user",
-                                "/api/properties/update/**",
-                                "/api/users/update/**"
-                        ).authenticated()
-                        .requestMatchers("/api/**").authenticated() // Secure all other API endpoints
-                        .anyRequest().permitAll() // Allow static resources for frontend
+                        .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class);
@@ -81,23 +70,12 @@ public class SpringSecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
-                "http://localhost:3000",// Frontend dev server
-                "http://localhost:8081",
-                "http://127.0.0.1:3000",    // Alternative localhost
-                "https://your-production-domain.com" // Production domain
+                "http://localhost:8080", // Allow frontend served from backend
+                "http://localhost:5173", // Common Vite dev server port
+                "http://localhost:3000"  // Common React dev server port
         ));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of(
-                "Authorization",
-                "Content-Type",
-                "X-Requested-With",
-                "Accept",
-                "Origin"
-        ));
-        configuration.setExposedHeaders(List.of(
-                "Authorization",
-                "Content-Disposition"
-        ));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
@@ -109,7 +87,7 @@ public class SpringSecurityConfig {
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService());
+        authProvider.setUserDetailsService(userDetailsServiceImpl);
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }

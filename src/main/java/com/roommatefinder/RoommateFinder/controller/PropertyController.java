@@ -1,35 +1,25 @@
 package com.roommatefinder.RoommateFinder.controller;
 
 import com.roommatefinder.RoommateFinder.model.Property;
-import com.roommatefinder.RoommateFinder.repository.PropertyRepository;
 import com.roommatefinder.RoommateFinder.service.PropertyService;
 import com.roommatefinder.RoommateFinder.utils.JwtUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/properties")
 public class PropertyController {
 
-    @Autowired
-    private PropertyService propertyService;
+    private final PropertyService propertyService;
+    private final JwtUtil jwtUtil;
 
-    @Autowired
-    private final PropertyRepository propertyRepository;
-
-
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    public PropertyController(PropertyRepository propertyRepository) {
-        this.propertyRepository = propertyRepository;
+    public PropertyController(PropertyService propertyService, JwtUtil jwtUtil) {
+        this.propertyService = propertyService;
+        this.jwtUtil = jwtUtil;
     }
 
-    // Existing endpoints
     @PostMapping("/create")
     public ResponseEntity<Property> createProperty(@RequestBody Property property,
                                                    @RequestHeader("Authorization") String token) {
@@ -40,7 +30,8 @@ public class PropertyController {
             Property savedProperty = propertyService.saveProperty(property);
             return ResponseEntity.ok(savedProperty);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(null);
+            // It's better to log the exception here
+            return ResponseEntity.badRequest().build();
         }
     }
 
@@ -52,8 +43,8 @@ public class PropertyController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Property> getPropertyById(@PathVariable String id) {
-        Optional<Property> property = Optional.ofNullable(propertyService.getPropertyById(id));
-        return property.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        Property property = propertyService.getPropertyById(id);
+        return property != null ? ResponseEntity.ok(property) : ResponseEntity.notFound().build();
     }
 
     @GetMapping("/user")
@@ -64,7 +55,7 @@ public class PropertyController {
             List<Property> properties = propertyService.getPropertiesByUserId(userId);
             return ResponseEntity.ok(properties);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().build();
         }
     }
 
@@ -80,29 +71,6 @@ public class PropertyController {
         return deleted ? ResponseEntity.ok("Property deleted successfully") : ResponseEntity.notFound().build();
     }
 
-    // New filtering endpoints
-    @GetMapping("/filter/budget")
-    public ResponseEntity<List<Property>> filterByBudgetRange(
-            @RequestParam double min,
-            @RequestParam double max) {
-        List<Property> properties = propertyService.filterPropertiesByBudget(min, max);
-        return ResponseEntity.ok(properties);
-    }
-
-    @GetMapping("/filter/preferences")
-    public ResponseEntity<List<Property>> filterByPreferences(
-            @RequestParam String gender) {
-        List<Property> properties = propertyService.filterPropertiesByPreferences(gender);
-        return ResponseEntity.ok(properties);
-    }
-
-    @GetMapping("/filter/location")
-    public ResponseEntity<List<Property>> filterByLocation(
-            @RequestParam String location) {
-        List<Property> properties = propertyService.filterPropertiesByLocation(location);
-        return ResponseEntity.ok(properties);
-    }
-
     @GetMapping("/filter/advanced")
     public ResponseEntity<List<Property>> advancedFilter(
             @RequestParam(required = false) String location,
@@ -110,27 +78,9 @@ public class PropertyController {
             @RequestParam(required = false) Double maxBudget,
             @RequestParam(required = false) String preferredGender) {
 
-        List<Property> properties;
-
-        if (location != null && minBudget != null && maxBudget != null && preferredGender != null) {
-            properties = propertyService.filterPropertiesByAllCriteria(location, minBudget, maxBudget, preferredGender);
-        } else if (location != null && minBudget != null && maxBudget != null) {
-            properties = propertyService.filterPropertiesByLocationAndBudget(location, minBudget, maxBudget);
-        } else if (minBudget != null && maxBudget != null && preferredGender != null) {
-            properties = propertyService.filterPropertiesByBudgetAndPreferences(minBudget, maxBudget, preferredGender);
-        } else if (location != null && preferredGender != null) {
-            properties = propertyService.filterPropertiesByLocationAndPreferences(location, preferredGender);
-        } else if (minBudget != null && maxBudget != null) {
-            properties = propertyService.filterPropertiesByBudget(minBudget, maxBudget);
-        } else if (location != null) {
-            properties = propertyService.filterPropertiesByLocation(location);
-        } else if (preferredGender != null) {
-            properties = propertyService.filterPropertiesByPreferences(preferredGender);
-        } else {
-            properties = propertyService.getAllProperties();
-        }
+        // Simplified logic by calling the service method that handles all criteria
+        List<Property> properties = propertyService.filterPropertiesByAllCriteria(location, minBudget != null ? minBudget : 0, maxBudget != null ? maxBudget : Double.MAX_VALUE, preferredGender);
 
         return ResponseEntity.ok(properties);
     }
-
 }
