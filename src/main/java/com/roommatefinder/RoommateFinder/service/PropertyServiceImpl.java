@@ -1,5 +1,7 @@
 package com.roommatefinder.RoommateFinder.service;
 
+import com.roommatefinder.RoommateFinder.exception.AccessDeniedException;
+import com.roommatefinder.RoommateFinder.exception.ResourceNotFoundException;
 import com.roommatefinder.RoommateFinder.model.Property;
 import com.roommatefinder.RoommateFinder.repository.PropertyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class PropertyServiceImpl implements PropertyService {
@@ -27,28 +28,44 @@ public class PropertyServiceImpl implements PropertyService {
 
     @Override
     public Property getPropertyById(String id) {
-        return propertyRepository.findById(id).orElse(null);
+        return propertyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Property not found with id: " + id));
     }
 
     @Override
-    public boolean deletePropertyById(String id) {
-        if (propertyRepository.existsById(id)) {
-            propertyRepository.deleteById(id);
-            return true;
+    public boolean deletePropertyById(String id, String currentUsername) {
+        // Find the property first to verify ownership.
+        Property property = propertyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Property not found with id: " + id));
+
+        // ✅ Authorization Check: Ensure the user owns the property.
+        if (!property.getUserId().equals(currentUsername)) {
+            throw new AccessDeniedException("You do not have permission to delete this property.");
         }
-        return false;
+
+        propertyRepository.delete(property);
+        return true;
     }
 
     @Override
-    public Property updateProperty(String id, Property updatedProperty) {
-        return propertyRepository.findById(id).map(existingProperty -> {
-            existingProperty.setTitle(updatedProperty.getTitle());
-            existingProperty.setDescription(updatedProperty.getDescription());
-            existingProperty.setLocation(updatedProperty.getLocation());
-            existingProperty.setBudget(updatedProperty.getBudget());
-            existingProperty.setPreferredGender(updatedProperty.getPreferredGender());
-            return propertyRepository.save(existingProperty);
-        }).orElse(null);
+    public Property updateProperty(String id, Property updatedProperty, String currentUsername) {
+        // Find the property to ensure it exists.
+        Property existingProperty = propertyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Property not found with id: " + id));
+
+        // ✅ Authorization Check: Ensure the user owns the property.
+        if (!existingProperty.getUserId().equals(currentUsername)) {
+            throw new AccessDeniedException("You do not have permission to update this property.");
+        }
+
+        // Update fields from the request body.
+        existingProperty.setTitle(updatedProperty.getTitle());
+        existingProperty.setDescription(updatedProperty.getDescription());
+        existingProperty.setLocation(updatedProperty.getLocation());
+        existingProperty.setBudget(updatedProperty.getBudget());
+        existingProperty.setPreferredGender(updatedProperty.getPreferredGender());
+
+        return propertyRepository.save(existingProperty);
     }
 
     @Override
@@ -56,7 +73,8 @@ public class PropertyServiceImpl implements PropertyService {
         return propertyRepository.findByUserId(userId);
     }
 
-    // Filtering methods
+    // --- Filtering Methods from original code ---
+
     @Override
     public List<Property> filterPropertiesByBudget(double minBudget, double maxBudget) {
         return propertyRepository.findByBudgetBetween(minBudget, maxBudget);

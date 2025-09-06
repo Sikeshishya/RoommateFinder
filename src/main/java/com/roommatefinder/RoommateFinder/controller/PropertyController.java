@@ -2,10 +2,9 @@ package com.roommatefinder.RoommateFinder.controller;
 
 import com.roommatefinder.RoommateFinder.model.Property;
 import com.roommatefinder.RoommateFinder.service.PropertyService;
-import com.roommatefinder.RoommateFinder.utils.JwtUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -13,26 +12,17 @@ import java.util.List;
 public class PropertyController {
 
     private final PropertyService propertyService;
-    private final JwtUtil jwtUtil;
 
-    public PropertyController(PropertyService propertyService, JwtUtil jwtUtil) {
+    public PropertyController(PropertyService propertyService) {
         this.propertyService = propertyService;
-        this.jwtUtil = jwtUtil;
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Property> createProperty(@RequestBody Property property,
-                                                   @RequestHeader("Authorization") String token) {
-        try {
-            String jwtToken = token.substring(7); // Remove "Bearer "
-            String userId = jwtUtil.extractUsername(jwtToken);
-            property.setUserId(userId);
-            Property savedProperty = propertyService.saveProperty(property);
-            return ResponseEntity.ok(savedProperty);
-        } catch (Exception e) {
-            // It's better to log the exception here
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<Property> createProperty(@RequestBody Property property, Principal principal) {
+        // Set the owner of the property to the currently authenticated user
+        property.setUserId(principal.getName());
+        Property savedProperty = propertyService.saveProperty(property);
+        return ResponseEntity.ok(savedProperty);
     }
 
     @GetMapping("/all")
@@ -44,31 +34,30 @@ public class PropertyController {
     @GetMapping("/{id}")
     public ResponseEntity<Property> getPropertyById(@PathVariable String id) {
         Property property = propertyService.getPropertyById(id);
-        return property != null ? ResponseEntity.ok(property) : ResponseEntity.notFound().build();
+        return ResponseEntity.ok(property);
     }
 
     @GetMapping("/user")
-    public ResponseEntity<List<Property>> getPropertiesByUser(@RequestHeader("Authorization") String token) {
-        try {
-            String jwtToken = token.substring(7);
-            String userId = jwtUtil.extractUsername(jwtToken);
-            List<Property> properties = propertyService.getPropertiesByUserId(userId);
-            return ResponseEntity.ok(properties);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<List<Property>> getPropertiesByUser(Principal principal) {
+        // Get properties for the currently authenticated user
+        List<Property> properties = propertyService.getPropertiesByUserId(principal.getName());
+        return ResponseEntity.ok(properties);
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<Property> updateProperty(@PathVariable String id, @RequestBody Property updatedProperty) {
-        Property updated = propertyService.updateProperty(id, updatedProperty);
-        return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
+    public ResponseEntity<Property> updateProperty(@PathVariable String id,
+                                                   @RequestBody Property propertyDetails,
+                                                   Principal principal) {
+        // The service layer now handles the authorization check
+        Property updatedProperty = propertyService.updateProperty(id, propertyDetails, principal.getName());
+        return ResponseEntity.ok(updatedProperty);
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<String> deletePropertyById(@PathVariable String id) {
-        boolean deleted = propertyService.deletePropertyById(id);
-        return deleted ? ResponseEntity.ok("Property deleted successfully") : ResponseEntity.notFound().build();
+    public ResponseEntity<Void> deletePropertyById(@PathVariable String id, Principal principal) {
+        // The service layer now handles the authorization check
+        propertyService.deletePropertyById(id, principal.getName());
+        return ResponseEntity.noContent().build(); // Return 204 No Content on successful deletion
     }
 
     @GetMapping("/filter/advanced")
@@ -78,9 +67,12 @@ public class PropertyController {
             @RequestParam(required = false) Double maxBudget,
             @RequestParam(required = false) String preferredGender) {
 
-        // Simplified logic by calling the service method that handles all criteria
-        List<Property> properties = propertyService.filterPropertiesByAllCriteria(location, minBudget != null ? minBudget : 0, maxBudget != null ? maxBudget : Double.MAX_VALUE, preferredGender);
-
+        List<Property> properties = propertyService.filterPropertiesByAllCriteria(
+                location,
+                minBudget != null ? minBudget : 0,
+                maxBudget != null ? maxBudget : Double.MAX_VALUE,
+                preferredGender
+        );
         return ResponseEntity.ok(properties);
     }
 }

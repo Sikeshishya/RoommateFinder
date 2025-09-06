@@ -51,7 +51,7 @@ public class SpringSecurityConfig {
                                 "/assets/**",
                                 "/static/**",
                                 "/favicon.ico",
-                                "/auth/**",
+                                "/auth/**", // This now includes /login, /register, and /refresh-token
                                 "/error"
                         ).permitAll()
                         .requestMatchers(
@@ -66,19 +66,15 @@ public class SpringSecurityConfig {
         return http.build();
     }
 
+    // ... other beans remain the same
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost:8080", // Allow frontend served from backend
-                "http://localhost:5173", // Common Vite dev server port
-                "http://localhost:3000"  // Common React dev server port
-        ));
+        configuration.setAllowedOrigins(List.of("http://localhost:8080", "http://localhost:5173", "http://localhost:3000"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
-
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
