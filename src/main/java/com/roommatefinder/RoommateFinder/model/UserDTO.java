@@ -1,19 +1,23 @@
 package com.roommatefinder.RoommateFinder.model;
 
 import com.roommatefinder.RoommateFinder.model.User;
+import java.util.Set; // 👈 Import Set
 
 public class UserDTO {
     private String id;
     private String username;
     private String email;
-    private String role;
+
+    // ✅ CHANGED: The role field is now a Set to match the User entity.
+    private Set<String> roles;
 
     // Constructor to convert User entity to UserDTO
     public UserDTO(User user) {
         this.id = user.getId();
         this.username = user.getUsername();
         this.email = user.getEmail();
-        this.role = user.getRole();
+        // ✅ CHANGED: It now gets the entire set of roles.
+        this.roles = user.getRoles();
     }
 
     // Getters and Setters
@@ -41,11 +45,12 @@ public class UserDTO {
         this.email = email;
     }
 
-    public String getRole() {
-        return role;
+    // ✅ CHANGED: Getter and setter for the new 'roles' Set.
+    public Set<String> getRoles() {
+        return roles;
     }
 
-    public void setRole(String role) {
-        this.role = role;
+    public void setRoles(Set<String> roles) {
+        this.roles = roles;
     }
 }

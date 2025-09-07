@@ -1,0 +1,89 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: RoommateFinder
+
+  data:
+    mongodb:
+      # Local Mongo (comment if using Atlas)
+      # host: localhost
+      # port: 27017
+      # database: roommate_finder
+
+      # MongoDB Atlas
+      uri: mongodb+srv://mongodbkishor:eoJTsJQhrkt7aCjD@cluster0.4vam6.mongodb.net/roommatefinder?retryWrites=true&w=majority&appName=Cluster0
+
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    jedis:
+      pool:
+        max-active: 10
+        max-idle: 5
+        min-idle: 1
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${EMAIL_USERNAME:your-email@gmail.com}
+    password: ${EMAIL_PASSWORD:your-app-password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  cache:
+    type: redis
+    redis:
+      cache-null-values: false
+      time-to-live: 24h
+
+# ===============================================
+# JWT Configuration
+# ===============================================
+jwt:
+  secret:
+    key: RoommateFinder2024SecretKeyForJWTTokenGenerationAndValidationJustMakeItLonger
+  access:
+    token:
+      expiration:
+        ms: 900000    # 15 minutes
+  refresh:
+    token:
+      expiration:
+        ms: 604800000 # 7 days
+
+# ===============================================
+# Custom Matching Algorithm
+# ===============================================
+matching:
+  algorithm:
+    weights:
+      budget: 0.25
+      location: 0.20
+      lifestyle: 0.20
+      personality: 0.15
+      preferences: 0.15
+      social: 0.05
+    thresholds:
+      minimum-compatibility: 0.6
+      high-compatibility: 0.8
+    cache:
+      enabled: true
+      ttl-hours: 24
+  ml:
+    model-path: "/models/compatibility-model.pkl"
+    retrain-interval-days: 7
+    feature-importance-threshold: 0.1
+
+logging:
+  level:
+    com.roommatefinder.RoommateFinder.service.SmartMatchingService: DEBUG
+    com.roommatefinder.RoommateFinder.service.BatchMatchingService: INFO
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

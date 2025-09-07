@@ -8,8 +8,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set; // 👈 Import Set
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -24,17 +26,21 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User registerUser(User user) {
-        // ✅ Throw specific exception for username conflict
         userRepository.findByUsername(user.getUsername()).ifPresent(s -> {
             throw new UsernameAlreadyExistsException("Username '" + user.getUsername() + "' is already taken!");
         });
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        if (user.getRole() == null || user.getRole().isEmpty()) {
-            user.setRole("USER");
+
+        // ✅ CHANGED: This now correctly sets the default role for a new user.
+        if (user.getRoles() == null || user.getRoles().isEmpty()) {
+            user.setRoles(Set.of("ROLE_USER"));
         }
+
         return userRepository.save(user);
     }
+
+    // --- All other methods remain the same ---
 
     @Override
     public List<User> getAllUsers() {
@@ -43,7 +49,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUserByUsername(String username) {
-        // Optional: Check if user exists before deleting
         if (!userRepository.findByUsername(username).isPresent()) {
             throw new ResourceNotFoundException("User not found with username: " + username);
         }
@@ -57,7 +62,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User updateUser(String username, User userDetails) {
-        // ✅ Throw specific exception if user to update is not found
         return userRepository.findByUsername(username).map(user -> {
             if (StringUtils.hasText(userDetails.getEmail())) {
                 user.setEmail(userDetails.getEmail());
